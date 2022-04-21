@@ -1,0 +1,32 @@
+---
+title: "Water Markets"
+author: "Sophia Leiker"
+date: "4/21/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(here)
+library(janitor)
+
+```
+
+
+```{r}
+#reading in the data
+water <- read_csv(here("data", "Water_Districts.csv"))
+```
+
+Fitting a line
+```{r}
+model.kern <- lm(MC_Kern ~ 0 + Reduction, data = water)
+```
+
+Getting the Slope
+```{r}
+B <- model.kern$coefficient[1]
+```
+

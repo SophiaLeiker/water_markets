@@ -11,7 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(here)
 library(janitor)
-
+library(equatiomatic)
 ```
 
 
@@ -25,34 +25,65 @@ water <- read_csv(here("data", "Water_Districts.csv"))
 Fitting a line
 ```{r}
 model.kern <- lm(MC_Kern ~ 0 + Reduction, data = water)
+model.mojave <- lm(MC_Mojave ~ 0 + Reduction, data = water)
+model.antelope <- lm(MC_Antelope ~ 0 + Reduction, data = water)
+model.ventura <- lm(MC_Ventura ~ 0 + Reduction, data = water)
 ```
 
 Getting the Slope
 ```{r}
-B <- model.kern$coefficient[1]
+B_kern <- model.kern$coefficient[1]
+B_mojave <- model.mojave$coefficient[1]
+B_antelope <- model.antelope$coefficient[1]
+B_ventura <- model.ventura$coefficient[1]
 ```
 
+
+```{r}
+water <- water %>% 
+  mutate(mc_aggregate = MC_Kern + MC_Antelope + MC_Ventura + MC_Mojave)
+
+water_longer <- water %>% 
+  pivot_longer(cols = c(3:6), names_to = "county", values_to = "mc") %>% 
+  mutate(county = case_when(
+    county == "MC_Kern" ~ "Kern", 
+    county == "MC_Antelope" ~ "Antelope", 
+    county == "MC_Ventura" ~ "Ventura", 
+    county == "MC_Mojave" ~ "Mojave",
+    county == "MC_Aggregate" ~ "Aggregate"
+  ))
+```
+
+```{r}
+ggplot(data = water_longer, 
+       aes(x = Reduction, y = mc, color = county)) +
+  geom_point(size = 0.2) + 
+  geom_smooth(method = "lm") +
+  theme_minimal(14) +
+  labs (y = "Marginal cost to Abate ($/acre foot)", 
+        x = "Reduction (acre feet)")
+```
+
+```{r}
+lm_aggregate <- lm(mc_aggregate ~ 0 + Reduction, data = water_longer)
+slope_aggregate <- lm_aggregate$coefficients[1]
+```
+
+##### SWITCHING CODE ########
 Predicting by multiplying a vector of abatement number by the slope selected above
 ```{r}
-#steps <- seq(150,10,-1)
-predicted.mc <- B*seq(0,140,1)
-```
+predicted.mc_kern <- B_kern*seq(0,140,1)
 
-Adding new column to the water data frame
-```{r}
+#Adding new column to the water data frame
 water_demand <- water %>% 
   #mutate(demand = steps) %>% 
-  mutate(Predicted_MC_Kern = predicted.mc)
-```
+  mutate(Predicted_MC_Kern = predicted.mc_kern)
 
-```{r}
 ggplot(data = water_demand, aes(x=Reduction, y = Predicted_MC_Kern))+
   geom_line(color = "forestgreen") +
   labs(title = "Marginal Cost Kern Line") +
     geom_point(aes(x=Reduction, y = MC_Kern))
-```
 
-```{r}
 extract_eq(model.kern, use_coefs = TRUE)
 slope_kern <- model.kern$coefficients[1]
 ```
@@ -60,33 +91,22 @@ slope_kern <- model.kern$coefficients[1]
 
 ***
 
-## Mojave 
+MOJAVE
 
-Fitting a line and Getting the slope
 ```{r}
-model.mojave <- lm(MC_Mojave ~ 0 + Reduction, data = water)
-
-B_mojave <- model.mojave$coefficient[1]
-```
-
-Predicting by multiplying a vector of abatement number by the slope selected above
-```{r}
-steps_mojave <- seq(140,0,-1)
 predicted.mc_mojave <- B_mojave*seq(0,140,1)
-```
 
-Adding new column to the water data frame
-```{r}
+#Adding new column to the water data frame
 water_demand <- water_demand %>% 
-  mutate(demand = steps_mojave) %>% 
-  mutate(Predicted_MC_mojave = predicted.mc_mojave)
-```
+  mutate(Predicted_MC_Mojave = predicted.mc_mojave)
 
-```{r}
-ggplot(data = water_demand, aes(x=Reduction, y = predicted.mc_mojave))+
-  geom_line(color = "blue") +
+ggplot(data = water_demand, aes(x=Reduction, y = Predicted_MC_Mojave))+
+  geom_line(color = "Red") +
   labs(title = "Marginal Cost Mojave Line") +
-  geom_point(aes(x=Reduction, y = MC_Mojave))
+    geom_point(aes(x=Reduction, y = MC_Mojave))
+
+extract_eq(model.mojave, use_coefs = TRUE)
+slope_mojave <- model.mojave$coefficients[1]
 ```
 
 
@@ -94,29 +114,40 @@ ggplot(data = water_demand, aes(x=Reduction, y = predicted.mc_mojave))+
 
 ## Antelope
 
-Fitting a line and Getting the slope
-```{r}
-model.antelope <- lm(MC_Antelope ~ 0 + Reduction, data = water)
 
-B_antelope <- model.antelope$coefficient[1]
-```
-
-Predicting by multiplying a vector of abatement number by the slope selected above
 ```{r}
-steps_antelope <- seq(220,95,-1)
-predicted.mc_antelope <- B_antelope*seq(0,220,1)
-```
+predicted.mc_antelope <- B_antelope*seq(0,140,1)
 
-Adding new column to the water data frame
-```{r}
+#Adding new column to the water data frame
 water_demand <- water_demand %>% 
-  mutate(demand = steps_antelope) %>% 
-  mutate(Predicted_MC_antelope = predicted.mc_antelope)
+  mutate(Predicted_MC_Antelope = predicted.mc_antelope)
+
+ggplot(data = water_demand, aes(x=Reduction, y = Predicted_MC_Antelope))+
+  geom_line(color = "Blue") +
+  labs(title = "Marginal Cost Antelope Line") +
+    geom_point(aes(x=Reduction, y = MC_Antelope))
+
+extract_eq(model.antelope, use_coefs = TRUE)
+slope_antelope <- model.antelope$coefficients[1]
 ```
 
+***
+
+## AVentura
+
+
 ```{r}
-ggplot(data = water_demand, aes(x=Reduction, y = predicted.mc_mojave))+
-  geom_line(color = "blue") +
-  labs(title = "Marginal Cost Mojave Line") +
-  geom_point(aes(x=Reduction, y = MC_Mojave))
+predicted.mc_ventura <- B_ventura*seq(0,140,1)
+
+#Adding new column to the water data frame
+water_demand <- water_demand %>% 
+  mutate(Predicted_MC_Ventura = predicted.mc_ventura)
+
+ggplot(data = water_demand, aes(x=Reduction, y = Predicted_MC_Ventura))+
+  geom_line(color = "Purple") +
+  labs(title = "Marginal Cost Ventura Line") +
+    geom_point(aes(x=Reduction, y = MC_Ventura))
+
+extract_eq(model.ventura, use_coefs = TRUE)
+slope_ventura <- model.ventura$coefficients[1]
 ```

@@ -20,6 +20,8 @@ library(janitor)
 water <- read_csv(here("data", "Water_Districts.csv"))
 ```
 
+## Kern
+
 Fitting a line
 ```{r}
 model.kern <- lm(MC_Kern ~ 0 + Reduction, data = water)
@@ -30,3 +32,91 @@ Getting the Slope
 B <- model.kern$coefficient[1]
 ```
 
+Predicting by multiplying a vector of abatement number by the slope selected above
+```{r}
+#steps <- seq(150,10,-1)
+predicted.mc <- B*seq(0,140,1)
+```
+
+Adding new column to the water data frame
+```{r}
+water_demand <- water %>% 
+  #mutate(demand = steps) %>% 
+  mutate(Predicted_MC_Kern = predicted.mc)
+```
+
+```{r}
+ggplot(data = water_demand, aes(x=Reduction, y = Predicted_MC_Kern))+
+  geom_line(color = "forestgreen") +
+  labs(title = "Marginal Cost Kern Line") +
+    geom_point(aes(x=Reduction, y = MC_Kern))
+```
+
+```{r}
+extract_eq(model.kern, use_coefs = TRUE)
+slope_kern <- model.kern$coefficients[1]
+```
+
+
+***
+
+## Mojave 
+
+Fitting a line and Getting the slope
+```{r}
+model.mojave <- lm(MC_Mojave ~ 0 + Reduction, data = water)
+
+B_mojave <- model.mojave$coefficient[1]
+```
+
+Predicting by multiplying a vector of abatement number by the slope selected above
+```{r}
+steps_mojave <- seq(140,0,-1)
+predicted.mc_mojave <- B_mojave*seq(0,140,1)
+```
+
+Adding new column to the water data frame
+```{r}
+water_demand <- water_demand %>% 
+  mutate(demand = steps_mojave) %>% 
+  mutate(Predicted_MC_mojave = predicted.mc_mojave)
+```
+
+```{r}
+ggplot(data = water_demand, aes(x=Reduction, y = predicted.mc_mojave))+
+  geom_line(color = "blue") +
+  labs(title = "Marginal Cost Mojave Line") +
+  geom_point(aes(x=Reduction, y = MC_Mojave))
+```
+
+
+***
+
+## Antelope
+
+Fitting a line and Getting the slope
+```{r}
+model.antelope <- lm(MC_Antelope ~ 0 + Reduction, data = water)
+
+B_antelope <- model.antelope$coefficient[1]
+```
+
+Predicting by multiplying a vector of abatement number by the slope selected above
+```{r}
+steps_antelope <- seq(220,95,-1)
+predicted.mc_antelope <- B_antelope*seq(0,220,1)
+```
+
+Adding new column to the water data frame
+```{r}
+water_demand <- water_demand %>% 
+  mutate(demand = steps_antelope) %>% 
+  mutate(Predicted_MC_antelope = predicted.mc_antelope)
+```
+
+```{r}
+ggplot(data = water_demand, aes(x=Reduction, y = predicted.mc_mojave))+
+  geom_line(color = "blue") +
+  labs(title = "Marginal Cost Mojave Line") +
+  geom_point(aes(x=Reduction, y = MC_Mojave))
+```

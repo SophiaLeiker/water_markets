@@ -61,7 +61,12 @@ ggplot(data = water_longer,
   geom_smooth(method = "lm") +
   theme_minimal(14) +
   labs (y = "Marginal cost to Abate ($/acre foot)", 
-        x = "Reduction (acre feet)")
+        x = "Reduction (acre feet)",
+        title = "Marginal Abatement Cost") +
+  scale_color_manual(values = c("yellow", "blue", "red", "forestgreen")) +
+  scale_y_continuous(limits = c(0, 500)) +
+  scale_x_continuous(limits = c(0, 150)) +
+  theme_minimal()
 ```
 
 ```{r}
@@ -91,7 +96,7 @@ slope_kern <- model.kern$coefficients[1]
 
 ***
 
-MOJAVE
+## MOJAVE
 
 ```{r}
 predicted.mc_mojave <- B_mojave*seq(0,140,1)
@@ -133,7 +138,7 @@ slope_antelope <- model.antelope$coefficients[1]
 
 ***
 
-## AVentura
+## Ventura
 
 
 ```{r}
@@ -151,3 +156,56 @@ ggplot(data = water_demand, aes(x=Reduction, y = Predicted_MC_Ventura))+
 extract_eq(model.ventura, use_coefs = TRUE)
 slope_ventura <- model.ventura$coefficients[1]
 ```
+
+***
+
+## 2 Demand Curve
+
+
+```{r}
+
+demand_kern <- B_kern*c(150:0)
+demand_mojave <- B_mojave*c(140:0)
+demand_antelope <- B_antelope*c(220:0)
+demand_ventura <- B_ventura*c(245:0)
+
+#Adding new column to the water data frame
+water_demand <- water_demand %>% 
+  mutate(demand_kern = demand_kern) %>% 
+  mutate(demand_mojave = demand_mojave) %>% 
+  mutate(demand_antelope = demand_antelope) %>% 
+  mutate(demand_ventura = demand_ventura)
+  
+
+ggplot(data = water_demand, aes(x=Reduction, y = demand_kern))+
+  geom_line(color = "green") +
+  labs(title = "Demand Lines", y = "Demand ($/acre foot)") +
+  geom_line(color = "red", aes(x=Reduction, y = demand_mojave)) +
+  geom_line(color = "blue", aes(x=Reduction, y = demand_antelope)) +
+  geom_line(color = "purple", aes(x=Reduction, y = demand_ventura))
+```
+
+```{r}
+#NEW CODE HERE
+water2 <- water %>% clean_names() %>% 
+  mutate(mc_aggregate = mc_kern + mc_antelope + mc_ventura + mc_mojave)
+
+reduction_inverse <- c(140:0)
+water_inverse <- data.frame(reduction_inverse, water2) 
+water_inverse_longer <- water_inverse %>% 
+  pivot_longer(cols = c(4:7), names_to = "county", values_to = "mc") %>% 
+  mutate(county = case_when(
+    county == "mc_kern" ~ "Kern", 
+    county == "mc_antelope" ~ "Antelope", 
+    county == "mc_ventura" ~ "Ventura", 
+    county == "mc_mojave" ~ "Mojave"
+  ))
+ggplot(data = water_inverse_longer, 
+       aes(x = reduction_inverse, y = mc, color = county)) +
+  geom_line(size = 0.3) + 
+  geom_smooth(method = "lm") +
+  theme_minimal(14) +
+  labs (y = "Marginal benefit of water use ($/acre foot)", 
+        x = "Water use (consumption) (acre feet)")
+```
+

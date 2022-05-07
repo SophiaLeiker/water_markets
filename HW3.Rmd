@@ -1,0 +1,77 @@
+---
+title: "HW3"
+author: "Sophia Leiker"
+date: "5/4/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(rootSolve)
+
+```
+
+```{r}
+#reading in the data 
+df <- read.csv("link to csv") %>% 
+  select(-1) %>% 
+  clean_names
+
+model_demand_1 <- lm(price_cents ~ Q_low_kwh, data_df) #making sure we put
+model_demand_h <- lm(price_cents ~ Q_low_kwh, data_df) #this is different than above 
+```
+
+
+```{r}
+#creating a function to get the demand
+
+#this first things is m/b
+
+#this is going through every price and returning the quantity wanted based on the model 
+
+demand <- function(p,model) {
+  q <- (p-model$coefficients[[1]])/model$coefficients[[2]]
+  q <- ifelse(q<0,0,q)
+  return(q)
+}
+
+#so you can estaimte demand low at $2
+demand_1_2 <- demand(p=2, model = model_demand_1)
+
+# for each p level, return estimated aggregate demand 
+
+demand_agg <- function(p){
+  q <- demand(p, model_demand_1) + demand(p, model_demand_h)
+  return(q)
+}
+
+
+price <- 2
+quantity <- demand_agg(price) #this should be 763114.9
+
+#I also define functions for calculating the consumer surplus
+
+CS <- function(p,model){
+  q <- demand(p,model)
+  cs <- 0.5 * (model$coefficients[[1]] - p)*q #(this is intercept - p) The top part of the triangle in the picture (just calucating the triangle formula in there) This you can tell it high demand or low demand and give it a price and it will spit out the triangle 
+  return(cs)
+}
+
+#this is using a function to define a price 
+
+CS_agg <- function(p){
+  cs <- CS(p,model_demand_1) + CS(p, model_demanded_h)
+  return(cs)
+}
+```
+
+
+
+```{r}
+
+
+
+```
+
